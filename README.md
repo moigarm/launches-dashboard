@@ -20,7 +20,7 @@ Create your local environment file by copying the provided example. In your term
 ```bash
 cp .env.example .env
 ```
-Once copied, open your `.env` file. You should see the database URL is already set to work out-of-the-box with the local Docker setup `DATABASE_URL="postgresql://user:password@localhost:5432/launch_dashboard?schema=public"`.
+Once copied, open your `.env` file. You should see the database URL is already set to work out-of-the-box with the local Docker setup `DATABASE_URL="postgresql://user:password@localhost:5432/launch_dashboard"`.
 
 You can leave the database URL as is and replace the other API keys (like Better Auth secrets, X API keys, etc.) with your actual values.
 
