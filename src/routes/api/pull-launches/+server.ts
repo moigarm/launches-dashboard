@@ -1,21 +1,23 @@
 import { json } from '@sveltejs/kit';
 import { prisma } from '$lib/db';
-import { searchLaunchPosts } from '$lib/x-api';
-import { searchLinkedInPosts } from '$lib/linkedin-api';
+import { searchLaunchPosts } from '$lib/x-scraper';
+import { searchLinkedInPosts } from '$lib/linkedin-scraper';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const body = await request.json().catch(() => ({}));
-		const { nextToken, limit = 50 } = body;
+		const { nextToken, linkedInNextToken, limit = 50 } = body;
 
 		// Fetch from X with pagination
 		const xResult = await searchLaunchPosts(undefined, limit, nextToken);
 		const xPosts = xResult.posts || [];
 		const xNextToken = xResult.nextToken;
 
-		// Fetch from LinkedIn
-		const linkedInPosts = await searchLinkedInPosts();
+		// Fetch from LinkedIn with pagination
+		const liResult = await searchLinkedInPosts('launch', limit, linkedInNextToken);
+		const linkedInPosts = liResult.posts || [];
+		const liNextToken = liResult.nextToken;
 
 		let newLaunches = 0;
 
@@ -109,13 +111,17 @@ export const POST: RequestHandler = async ({ request }) => {
 			}
 		}
 
+		// Return both pagination tokens so the frontend can continue fetching
+		const hasMore = !!xNextToken || !!liNextToken;
+
 		return json({
 			success: true,
 			newLaunches,
 			xPosts: xPosts.length,
 			linkedInPosts: linkedInPosts.length,
 			nextToken: xNextToken,
-			hasMore: !!xNextToken
+			linkedInNextToken: liNextToken,
+			hasMore
 		});
 	} catch (error) {
 		console.error('Error pulling launches:', error);

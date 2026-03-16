@@ -11,6 +11,7 @@
 	}
 
 	let { user }: Props = $props();
+	let mobileOpen = $state(false);
 
 	const navItems = [
 		{ href: "/dashboard", label: "Dashboard", icon: "📊" },
@@ -22,110 +23,122 @@
 		await signOut();
 		await goto("/login");
 	}
+
+	function toggleMobile() {
+		mobileOpen = !mobileOpen;
+	}
 </script>
 
-<nav class="bg-white shadow-sm border-b border-gray-200">
-	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-		<div class="flex justify-between h-16">
-			<div class="flex">
-				<div class="flex-shrink-0 flex items-center">
-					<a href="/" class="text-xl font-bold text-indigo-600"
-						>Launch Dashboard</a
+<nav class="sticky top-0 z-30 border-b border-white/[0.06] bg-[#0a0e1a]/80 backdrop-blur-xl">
+	<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+		<div class="flex h-16 items-center justify-between">
+			<!-- Logo + Desktop Links -->
+			<div class="flex items-center gap-8">
+				<a
+					href="/"
+					class="flex items-center gap-2 text-lg font-bold tracking-tight text-white transition-opacity hover:opacity-80"
+				>
+					<span class="inline-block h-7 w-7 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-center text-sm leading-7"
+						>🚀</span
 					>
-				</div>
-				<div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+					<span>Launch<span class="text-indigo-400">Dash</span></span>
+				</a>
+
+				<div class="hidden sm:flex sm:items-center sm:gap-1">
 					{#each navItems as item}
 						<a
 							href={item.href}
-							class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium {$page
-								.url.pathname === item.href
-								? 'border-indigo-500 text-gray-900'
-								: 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'}"
+							class="relative rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200
+								{$page.url.pathname === item.href
+								? 'bg-indigo-500/10 text-indigo-300'
+								: 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-200'}"
 						>
-							<span class="mr-2">{item.icon}</span>
+							<span class="mr-1.5">{item.icon}</span>
 							{item.label}
+							{#if $page.url.pathname === item.href}
+								<span
+									class="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-gradient-to-r from-indigo-500 to-violet-500"
+								></span>
+							{/if}
 						</a>
 					{/each}
 				</div>
 			</div>
-			<div class="hidden sm:ml-6 sm:flex sm:items-center">
+
+			<!-- User area -->
+			<div class="hidden sm:flex sm:items-center sm:gap-3">
 				{#if user}
-					<div class="flex items-center space-x-4">
-						<span class="text-sm text-gray-700">
-							{user.name || user.email}
-						</span>
-						<button
-							onclick={handleLogout}
-							class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-						>
-							Logout
-						</button>
-					</div>
+					<span class="text-sm text-slate-400">{user.name || user.email}</span>
+					<button onclick={handleLogout} class="btn-primary text-xs">
+						Logout
+					</button>
 				{:else}
-					<div class="flex items-center space-x-4">
-						<a
-							href="/login"
-							class="text-sm font-medium text-gray-700 hover:text-gray-900"
-						>
-							Login
-						</a>
-						<a
-							href="/register"
-							class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-						>
-							Sign up
-						</a>
-					</div>
+					<a
+						href="/login"
+						class="text-sm font-medium text-slate-400 transition-colors hover:text-white"
+					>
+						Login
+					</a>
+					<a href="/register" class="btn-primary text-xs"> Sign up </a>
 				{/if}
 			</div>
+
+			<!-- Mobile hamburger -->
+			<button
+				class="sm:hidden rounded-lg p-2 text-slate-400 hover:bg-white/[0.06] hover:text-white transition-colors"
+				onclick={toggleMobile}
+				aria-label="Toggle menu"
+			>
+				<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					{#if mobileOpen}
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+					{:else}
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+					{/if}
+				</svg>
+			</button>
 		</div>
 	</div>
 
 	<!-- Mobile menu -->
-	<div class="sm:hidden">
-		<div class="pt-2 pb-3 space-y-1">
-			{#each navItems as item}
-				<a
-					href={item.href}
-					class="block pl-3 pr-4 py-2 border-l-4 text-base font-medium {$page
-						.url.pathname === item.href
-						? 'bg-indigo-50 border-indigo-500 text-indigo-700'
-						: 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'}"
-				>
-					<span class="mr-2">{item.icon}</span>
-					{item.label}
-				</a>
-			{/each}
-		</div>
-		{#if user}
-			<div class="pt-4 pb-3 border-t border-gray-200">
-				<div class="flex items-center px-4">
-					<div class="flex-shrink-0">
+	{#if mobileOpen}
+		<div class="border-t border-white/[0.06] sm:hidden fade-in">
+			<div class="space-y-1 px-4 py-3">
+				{#each navItems as item}
+					<a
+						href={item.href}
+						onclick={() => (mobileOpen = false)}
+						class="flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors
+							{$page.url.pathname === item.href
+							? 'bg-indigo-500/10 text-indigo-300'
+							: 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-200'}"
+					>
+						<span class="mr-3 text-base">{item.icon}</span>
+						{item.label}
+					</a>
+				{/each}
+			</div>
+			{#if user}
+				<div class="border-t border-white/[0.06] px-4 py-4">
+					<div class="mb-3 flex items-center gap-3">
 						<span
-							class="inline-block h-10 w-10 rounded-full bg-indigo-600 text-white flex items-center justify-center"
+							class="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-sm font-bold text-white"
 						>
-							{user.name?.[0]?.toUpperCase() ||
-								user.email[0].toUpperCase()}
+							{user.name?.[0]?.toUpperCase() || user.email[0].toUpperCase()}
 						</span>
-					</div>
-					<div class="ml-3">
-						<div class="text-base font-medium text-gray-800">
-							{user.name || "User"}
-						</div>
-						<div class="text-sm font-medium text-gray-500">
-							{user.email}
+						<div>
+							<div class="text-sm font-medium text-slate-200">{user.name || "User"}</div>
+							<div class="text-xs text-slate-500">{user.email}</div>
 						</div>
 					</div>
-				</div>
-				<div class="mt-3 space-y-1">
 					<button
 						onclick={handleLogout}
-						class="block w-full text-left px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+						class="w-full rounded-lg bg-white/[0.04] px-4 py-2 text-sm font-medium text-slate-400 transition-colors hover:bg-white/[0.08] hover:text-white"
 					>
 						Logout
 					</button>
 				</div>
-			</div>
-		{/if}
-	</div>
+			{/if}
+		</div>
+	{/if}
 </nav>

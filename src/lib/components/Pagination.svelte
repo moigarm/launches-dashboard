@@ -19,41 +19,48 @@
 	}
 </script>
 
-<div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+<div class="flex items-center justify-between border-t border-white/[0.06] px-4 py-3 sm:px-6">
+	<!-- Mobile -->
 	<div class="flex flex-1 justify-between sm:hidden">
 		<button
 			onclick={() => goToPage(currentPage - 1)}
 			disabled={currentPage === 1}
-			class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+			class="btn-secondary text-xs disabled:opacity-40 disabled:cursor-not-allowed"
 		>
 			Previous
 		</button>
 		<button
 			onclick={() => goToPage(currentPage + 1)}
 			disabled={currentPage === totalPages}
-			class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+			class="btn-primary text-xs disabled:opacity-40 disabled:cursor-not-allowed"
 		>
 			Next
 		</button>
 	</div>
+
+	<!-- Desktop -->
 	<div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
 		<div>
-			<p class="text-sm text-gray-700">
+			<p class="text-sm text-slate-500">
 				Showing
-				<span class="font-medium">{startItem}</span>
+				<span class="font-semibold text-slate-300">{startItem}</span>
 				to
-				<span class="font-medium">{endItem}</span>
+				<span class="font-semibold text-slate-300">{endItem}</span>
 				of
-				<span class="font-medium">{totalItems}</span>
+				<span class="font-semibold text-slate-300">{totalItems}</span>
 				results
 			</p>
 		</div>
 		<div>
-			<nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+			<nav
+				class="isolate inline-flex -space-x-px rounded-lg"
+				aria-label="Pagination"
+			>
+				<!-- Prev -->
 				<button
 					onclick={() => goToPage(currentPage - 1)}
 					disabled={currentPage === 1}
-					class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+					class="relative inline-flex items-center rounded-l-lg border border-white/[0.08] bg-white/[0.03] px-2 py-2 text-slate-500 transition-colors hover:bg-white/[0.06] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
 				>
 					<span class="sr-only">Previous</span>
 					<svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -69,25 +76,27 @@
 					{#if page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)}
 						<button
 							onclick={() => goToPage(page)}
-							class="relative inline-flex items-center px-4 py-2 text-sm font-semibold {page === currentPage
-								? 'z-10 bg-indigo-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
-								: 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:outline-offset-0'}"
+							class="relative inline-flex items-center border px-4 py-2 text-sm font-semibold transition-all
+								{page === currentPage
+								? 'z-10 border-indigo-500/40 bg-indigo-500/15 text-indigo-300'
+								: 'border-white/[0.08] bg-white/[0.03] text-slate-400 hover:bg-white/[0.06] hover:text-white'}"
 						>
 							{page}
 						</button>
 					{:else if page === currentPage - 2 || page === currentPage + 2}
 						<span
-							class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300"
+							class="relative inline-flex items-center border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-sm font-semibold text-slate-600"
 						>
 							...
 						</span>
 					{/if}
 				{/each}
 
+				<!-- Next -->
 				<button
 					onclick={() => goToPage(currentPage + 1)}
 					disabled={currentPage === totalPages}
-					class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+					class="relative inline-flex items-center rounded-r-lg border border-white/[0.08] bg-white/[0.03] px-2 py-2 text-slate-500 transition-colors hover:bg-white/[0.06] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
 				>
 					<span class="sr-only">Next</span>
 					<svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">

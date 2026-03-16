@@ -13,11 +13,7 @@
 		loading = true;
 
 		try {
-			const result = await signIn.email({
-				email,
-				password
-			});
-
+			const result = await signIn.email({ email, password });
 			if (result.error) {
 				error = result.error.message || 'Invalid email or password';
 			} else {
@@ -32,22 +28,29 @@
 	}
 </script>
 
-<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-	<div class="max-w-md w-full space-y-8">
-		<div>
-			<h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-				Sign in to your account
+<div class="page-bg flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+	<div class="w-full max-w-md space-y-8 fade-in">
+		<!-- Logo -->
+		<div class="text-center">
+			<div class="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-2xl shadow-lg shadow-indigo-500/20">
+				🚀
+			</div>
+			<h2 class="text-2xl font-bold tracking-tight text-white">
+				Sign in to <span class="text-indigo-400">LaunchDash</span>
 			</h2>
+			<p class="mt-2 text-sm text-slate-500">Track launches and discover opportunities</p>
 		</div>
-		<form class="mt-8 space-y-6" onsubmit={handleSubmit}>
+
+		<form class="glass-card space-y-5 p-6" onsubmit={handleSubmit}>
 			{#if error}
-				<div class="rounded-md bg-red-50 p-4">
-					<p class="text-sm text-red-800">{error}</p>
+				<div class="rounded-lg border border-red-500/30 bg-red-950/40 px-4 py-3">
+					<p class="text-sm text-red-300">{error}</p>
 				</div>
 			{/if}
-			<div class="rounded-md shadow-sm -space-y-px">
+
+			<div class="space-y-4">
 				<div>
-					<label for="email-address" class="sr-only">Email address</label>
+					<label for="email-address" class="label-dark">Email address</label>
 					<input
 						id="email-address"
 						name="email"
@@ -55,12 +58,12 @@
 						autocomplete="email"
 						required
 						bind:value={email}
-						class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-						placeholder="Email address"
+						class="input-dark"
+						placeholder="you@example.com"
 					/>
 				</div>
 				<div>
-					<label for="password" class="sr-only">Password</label>
+					<label for="password" class="label-dark">Password</label>
 					<input
 						id="password"
 						name="password"
@@ -68,25 +71,19 @@
 						autocomplete="current-password"
 						required
 						bind:value={password}
-						class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-						placeholder="Password"
+						class="input-dark"
+						placeholder="••••••••"
 					/>
 				</div>
 			</div>
 
-			<div>
-				<button
-					type="submit"
-					disabled={loading}
-					class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-				>
-					{loading ? 'Signing in...' : 'Sign in'}
-				</button>
-			</div>
+			<button type="submit" disabled={loading} class="btn-primary w-full">
+				{loading ? 'Signing in…' : 'Sign in'}
+			</button>
 
 			<div class="text-center">
-				<a href="/register" class="font-medium text-indigo-600 hover:text-indigo-500">
-					Don't have an account? Sign up
+				<a href="/register" class="link-accent text-sm">
+					Don't have an account? <span class="font-semibold">Sign up</span>
 				</a>
 			</div>
 		</form>
