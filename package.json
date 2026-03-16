@@ -16,6 +16,7 @@
 		"db:studio": "prisma studio"
 	},
 	"devDependencies": {
+		"@sveltejs/adapter-auto": "^7.0.1",
 		"@sveltejs/adapter-node": "^5.2.10",
 		"@sveltejs/kit": "^2.50.2",
 		"@sveltejs/vite-plugin-svelte": "^6.2.4",
