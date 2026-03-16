@@ -1,8 +1,15 @@
-// Contact enrichment — runs all 3 APIs and merges the best result per field:
-// - Prospeo: best for LinkedIn + xHandle (company enrichment)
-// - Hunter.io: best for email + phone (domain-based)
-// - Apollo.io: best for phone + LinkedIn (org database)
-import { PROSPEO_API_KEY, HUNTER_API_KEY, APOLLO_API_KEY } from '$env/static/private';
+/**
+ * Contact enrichment via Apify actors.
+ *
+ * Replaces the Prospeo / Hunter.io / Apollo.io integrations with a single
+ * Apify-based approach using `vdrmota/contact-info-scraper`.
+ *
+ * The public API (`enrichContact`, `searchCompanyContacts`, `bulkEnrichContacts`)
+ * keeps the same signatures so consumers are unaffected.
+ */
+import { runActor } from '$lib/apify';
+
+// ─── Types ──────────────────────────────────────────────────────────────────────
 
 export interface EnrichedContact {
 	email: string | null;
@@ -11,38 +18,22 @@ export interface EnrichedContact {
 	xHandle: string | null;
 }
 
-export async function enrichContact(
-	companyName: string,
-	domain?: string
-): Promise<EnrichedContact | null> {
-	const domains = buildDomainCandidates(companyName, domain);
-	const primaryDomain = domains[0];
-
-	// Run all APIs in parallel — don't stop at first hit, merge the best field from each
-	const [prospeoResult, hunterResults, apolloResults] = await Promise.all([
-		PROSPEO_API_KEY ? enrichWithProspeo(companyName, primaryDomain) : null,
-		HUNTER_API_KEY
-			? Promise.all(domains.map((d) => enrichWithHunter(d)))
-			: Promise.resolve([]),
-		APOLLO_API_KEY
-			? Promise.all(domains.map((d) => enrichWithApollo(companyName, d)))
-			: Promise.resolve([])
-	]);
-
-	const hunterResult = (hunterResults as (EnrichedContact | null)[]).find(Boolean) || null;
-	const apolloResult = (apolloResults as (EnrichedContact | null)[]).find(Boolean) || null;
-
-	const sources = [prospeoResult, hunterResult, apolloResult].filter(Boolean) as EnrichedContact[];
-
-	if (sources.length === 0) return null;
-
-	// Merge: first non-null value for each field wins
-	return {
-		email: sources.map((s) => s.email).find(Boolean) ?? null,
-		phone: sources.map((s) => s.phone).find(Boolean) ?? null,
-		linkedin: sources.map((s) => s.linkedin).find(Boolean) ?? null,
-		xHandle: sources.map((s) => s.xHandle).find(Boolean) ?? null
-	};
+/** Shape returned by `vdrmota/contact-info-scraper`. */
+interface ContactInfoResult {
+	url?: string;
+	domain?: string;
+	emails?: Array<{ value: string; type?: string }>;
+	phones?: Array<{ value: string; type?: string }>;
+	linkedIns?: string[];
+	twitters?: string[];
+	facebooks?: string[];
+	instagrams?: string[];
+	youtubes?: string[];
+	// Some versions return flat fields
+	email?: string;
+	phone?: string;
+	linkedin?: string;
+	twitter?: string;
 }
 
 // ─── Domain candidates ─────────────────────────────────────────────────────────
@@ -71,116 +62,6 @@ function buildDomainCandidates(companyName: string, knownDomain?: string): strin
 	return [...new Set(candidates)]; // deduplicate
 }
 
-// ─── Prospeo ───────────────────────────────────────────────────────────────────
-
-async function enrichWithProspeo(
-	companyName: string,
-	domain?: string
-): Promise<EnrichedContact | null> {
-	try {
-		const data: Record<string, string> = { company_name: companyName };
-		if (domain) data.company_website = domain;
-
-		const response = await fetch('https://api.prospeo.io/enrich-company', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json', 'X-KEY': PROSPEO_API_KEY },
-			body: JSON.stringify({ data })
-		});
-
-		if (!response.ok) {
-			const body = await response.json().catch(() => ({}));
-			if (body?.error_code === 'NO_MATCH') return null; // expected — not an error
-			console.warn('Prospeo error:', response.status, body);
-			return null;
-		}
-
-		const result = await response.json();
-		const company = result.response?.company;
-		if (!company) return null;
-
-		return {
-			email: company.email || null,
-			phone: null,
-			linkedin: company.linkedin_url || null,
-			xHandle: company.twitter_url ? extractHandle(company.twitter_url) : null
-		};
-	} catch (e) {
-		console.warn('Prospeo exception:', e);
-		return null;
-	}
-}
-
-// ─── Hunter.io ─────────────────────────────────────────────────────────────────
-
-async function enrichWithHunter(domain: string): Promise<EnrichedContact | null> {
-	try {
-		const url = `https://api.hunter.io/v2/domain-search?domain=${encodeURIComponent(domain)}&limit=1&api_key=${HUNTER_API_KEY}`;
-		const response = await fetch(url);
-
-		if (!response.ok) return null;
-
-		const data = await response.json();
-		const orgData = data.data || {};
-		const emails: Array<{ value: string; linkedin?: string; phone_number?: string }> = orgData.emails || [];
-
-		if (emails.length === 0 && !orgData.linkedin && !orgData.twitter) return null;
-
-		return {
-			email: emails[0]?.value || null,
-			phone: orgData.phone_number || emails[0]?.phone_number || null,
-			linkedin: orgData.linkedin || emails[0]?.linkedin || null,
-			xHandle: orgData.twitter || null
-		};
-	} catch (e) {
-		console.warn('Hunter.io exception:', e);
-		return null;
-	}
-}
-
-// ─── Apollo.io ─────────────────────────────────────────────────────────────────
-
-async function enrichWithApollo(
-	companyName: string,
-	domain?: string
-): Promise<EnrichedContact | null> {
-	try {
-		const params = new URLSearchParams({ api_key: APOLLO_API_KEY });
-		if (domain) params.set('domain', domain);
-		else params.set('name', companyName);
-
-		const response = await fetch(
-			`https://api.apollo.io/api/v1/organizations/enrich?${params.toString()}`,
-			{ headers: { 'Cache-Control': 'no-cache' } }
-		);
-
-		if (!response.ok) return null;
-
-		const data = await response.json();
-		const org = data.organization;
-		if (!org) return null;
-
-		// Apollo returns twitter_url like https://twitter.com/handle
-		const xHandle = org.twitter_url ? extractHandle(org.twitter_url) : null;
-
-		// Apollo org enrichment: phone comes from primary_phone object
-		const phone =
-			org.primary_phone?.number ||
-			org.sanitized_phone ||
-			org.phone ||
-			null;
-
-		return {
-			email: org.email || null,
-			phone,
-			linkedin: org.linkedin_url || null,
-			xHandle
-		};
-	} catch (e) {
-		console.warn('Apollo.io exception:', e);
-		return null;
-	}
-}
-
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
 function extractHandle(url: string): string | null {
@@ -188,38 +69,143 @@ function extractHandle(url: string): string | null {
 	return match ? match[1] : null;
 }
 
-// Search for contacts/people at a company (used elsewhere in the app)
-export async function searchCompanyContacts(domain: string, limit: number = 10) {
-	if (!PROSPEO_API_KEY) return [];
+/**
+ * Normalise the Apify contact-info-scraper output into our `EnrichedContact` shape.
+ */
+function normaliseContactResult(result: ContactInfoResult): EnrichedContact {
+	// Email: prefer structured array, fall back to flat field
+	const email =
+		result.emails?.[0]?.value ??
+		result.email ??
+		null;
+
+	// Phone: prefer structured array, fall back to flat field
+	const phone =
+		result.phones?.[0]?.value ??
+		result.phone ??
+		null;
+
+	// LinkedIn: prefer array, fall back to flat field
+	const linkedin =
+		result.linkedIns?.[0] ??
+		result.linkedin ??
+		null;
+
+	// X/Twitter handle: prefer array, fall back to flat field, extract handle from URL
+	const twitterUrl =
+		result.twitters?.[0] ??
+		result.twitter ??
+		null;
+	const xHandle = twitterUrl ? (extractHandle(twitterUrl) ?? twitterUrl) : null;
+
+	return { email, phone, linkedin, xHandle };
+}
+
+// ─── Public API ─────────────────────────────────────────────────────────────────
+
+/**
+ * Enrich a company's contact information using Apify's contact-info-scraper.
+ *
+ * Builds domain candidates from the company name, then scrapes those URLs
+ * for emails, phones, LinkedIn profiles, and X handles.
+ */
+export async function enrichContact(
+	companyName: string,
+	domain?: string
+): Promise<EnrichedContact | null> {
+	const domains = buildDomainCandidates(companyName, domain);
+
+	if (domains.length === 0) return null;
+
+	// Build URLs to scrape — the actor expects full URLs
+	const startUrls = domains.map((d) => ({ url: `https://${d}` }));
 
 	try {
-		const response = await fetch('https://api.prospeo.io/search-person', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json', 'X-KEY': PROSPEO_API_KEY },
-			body: JSON.stringify({
-				filters: { company_website: { include: [domain] } },
-				page: 1
-			})
-		});
+		const { items } = await runActor<ContactInfoResult>(
+			'vdrmota/contact-info-scraper',
+			{
+				startUrls,
+				maxRequestsPerStartUrl: 3,
+				maxDepth: 2,
+				sameDomain: true
+			},
+			{ timeoutSecs: 120, maxItems: 10 }
+		);
 
-		if (!response.ok) return [];
+		if (items.length === 0) return null;
 
-		const data = await response.json();
-		const people = data.response?.profiles || [];
+		// Merge results from all scraped pages — first non-null value wins
+		const contacts = items.map(normaliseContactResult);
 
-		return people.slice(0, limit).map((p: Record<string, string>) => ({
-			email: p.email || null,
-			firstName: p.first_name || '',
-			lastName: p.last_name || '',
-			position: p.job_title || '',
-			linkedin: p.linkedin_url || null
-		}));
+		return {
+			email: contacts.map((c) => c.email).find(Boolean) ?? null,
+			phone: contacts.map((c) => c.phone).find(Boolean) ?? null,
+			linkedin: contacts.map((c) => c.linkedin).find(Boolean) ?? null,
+			xHandle: contacts.map((c) => c.xHandle).find(Boolean) ?? null
+		};
+	} catch (error) {
+		console.warn('Apify contact enrichment failed:', error);
+		return null;
+	}
+}
+
+/**
+ * Search for contacts/people at a company.
+ *
+ * Uses the contact-info-scraper to find people listed on the company website.
+ * Returns a simplified list of contacts found.
+ */
+export async function searchCompanyContacts(domain: string, limit: number = 10) {
+	try {
+		const { items } = await runActor<ContactInfoResult>(
+			'vdrmota/contact-info-scraper',
+			{
+				startUrls: [{ url: `https://${domain}` }],
+				maxRequestsPerStartUrl: 10,
+				maxDepth: 3,
+				sameDomain: true
+			},
+			{ timeoutSecs: 120, maxItems: 50 }
+		);
+
+		// Collect all unique emails found across pages
+		const emailSet = new Set<string>();
+		const contacts: Array<{
+			email: string | null;
+			firstName: string;
+			lastName: string;
+			position: string;
+			linkedin: string | null;
+		}> = [];
+
+		for (const item of items) {
+			const emails = item.emails ?? (item.email ? [{ value: item.email }] : []);
+			for (const emailObj of emails) {
+				if (emailObj.value && !emailSet.has(emailObj.value)) {
+					emailSet.add(emailObj.value);
+					contacts.push({
+						email: emailObj.value,
+						firstName: '',
+						lastName: '',
+						position: '',
+						linkedin: item.linkedIns?.[0] ?? item.linkedin ?? null
+					});
+				}
+			}
+		}
+
+		return contacts.slice(0, limit);
 	} catch {
 		return [];
 	}
 }
 
-// Bulk enrichment with rate limiting
+/**
+ * Bulk enrichment with rate limiting.
+ *
+ * Processes companies sequentially with a 1-second delay between each
+ * to avoid overwhelming the Apify platform.
+ */
 export async function bulkEnrichContacts(companies: Array<{ name: string; domain?: string }>) {
 	const results = [];
 	for (const company of companies) {

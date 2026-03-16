@@ -20,10 +20,10 @@
     }
 
     function sourceColor(src: string) {
-        if (src.startsWith("YC")) return "bg-orange-100 text-orange-800";
-        if (src === "TechCrunch") return "bg-green-100 text-green-800";
-        if (src === "Google News") return "bg-blue-100 text-blue-800";
-        return "bg-gray-100 text-gray-700";
+        if (src.startsWith("YC")) return "badge-amber";
+        if (src === "TechCrunch") return "badge-emerald";
+        if (src === "Google News") return "badge-blue";
+        return "badge-violet";
     }
 
     function applyFilters() {
@@ -53,92 +53,80 @@
     }
 </script>
 
-<div class="min-h-screen bg-gray-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="page-bg">
+    <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <!-- Header -->
-        <div class="flex justify-between items-start mb-8">
+        <div class="mb-8 flex items-start justify-between fade-in">
             <div>
-                <h1 class="text-3xl font-bold text-gray-900">Funding Events</h1>
-                <p class="text-gray-500 mt-1">
-                    Startup funding announcements from Google News, YC, and
-                    TechCrunch
+                <h1 class="text-3xl font-bold tracking-tight text-white text-glow">
+                    Funding Events
+                </h1>
+                <p class="mt-1.5 text-sm text-slate-500">
+                    Startup funding announcements from Google News, YC, and TechCrunch
                 </p>
             </div>
-            <div class="flex flex-col items-end gap-1">
+            <div class="flex flex-col items-end gap-2">
                 <button
                     onclick={pullFunding}
                     disabled={isPulling}
-                    class="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white px-4 py-2 rounded-lg font-medium transition-opacity"
+                    class="btn-primary"
                 >
-                    {isPulling ? "Fetching..." : "Fetch Funding"}
+                    {#if isPulling}
+                        <span class="pulse-glow">Fetching…</span>
+                    {:else}
+                        Fetch Funding
+                    {/if}
                 </button>
                 {#if pullStatus}
-                    <span class="text-xs text-gray-500">{pullStatus}</span>
+                    <span class="text-xs text-slate-500">{pullStatus}</span>
                 {/if}
             </div>
         </div>
 
-        <!-- Stats -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            <div
-                class="bg-white rounded-xl shadow-sm p-5 border border-gray-100"
-            >
-                <p
-                    class="text-xs font-semibold text-gray-400 uppercase tracking-wider"
-                >
+        <!-- Stat Cards -->
+        <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3 fade-in" style="animation-delay:.05s">
+            <!-- Total Events -->
+            <div class="stat-card p-5">
+                <p class="text-[0.65rem] font-bold uppercase tracking-widest text-slate-500">
                     Total Events
                 </p>
-                <p class="text-3xl font-bold text-gray-900 mt-1">
+                <p class="mt-1 text-3xl font-extrabold text-white">
                     {data.totalEvents.toLocaleString()}
                 </p>
             </div>
-            <div
-                class="bg-white rounded-xl shadow-sm p-5 border border-gray-100"
-            >
-                <p
-                    class="text-xs font-semibold text-gray-400 uppercase tracking-wider"
-                >
-                    Total Raised (tracked)
+
+            <!-- Total Raised -->
+            <div class="stat-card p-5">
+                <p class="text-[0.65rem] font-bold uppercase tracking-widest text-slate-500">
+                    Total Raised
                 </p>
-                <p class="text-3xl font-bold text-indigo-600 mt-1">
+                <p class="mt-1 text-3xl font-extrabold bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
                     {formatAmount(data.totalRaised)}
                 </p>
             </div>
-            <div
-                class="bg-white rounded-xl shadow-sm p-5 border border-gray-100"
-            >
-                <p
-                    class="text-xs font-semibold text-gray-400 uppercase tracking-wider"
-                >
+
+            <!-- Sources -->
+            <div class="stat-card p-5">
+                <p class="text-[0.65rem] font-bold uppercase tracking-widest text-slate-500">
                     Sources
                 </p>
-                <div class="flex flex-wrap gap-1 mt-2">
+                <div class="mt-2 flex flex-wrap gap-1.5">
                     {#each data.sources as src}
-                        <span
-                            class="text-xs px-2 py-0.5 rounded-full font-medium {sourceColor(
-                                src,
-                            )}">{src}</span
-                        >
+                        <span class="badge {sourceColor(src)}">{src}</span>
                     {/each}
                 </div>
             </div>
         </div>
 
         <!-- Filters -->
-        <div
-            class="bg-white rounded-xl shadow-sm p-5 mb-6 border border-gray-100"
-        >
-            <div class="flex flex-wrap gap-4 items-end">
+        <div class="glass-card mb-6 p-5 fade-in" style="animation-delay:.1s">
+            <div class="flex flex-wrap items-end gap-4">
                 <div>
-                    <label
-                        for="source"
-                        class="block text-sm font-medium text-gray-700 mb-1"
-                        >Source</label
-                    >
+                    <label for="source" class="label-dark">Source</label>
                     <select
                         id="source"
                         bind:value={source}
-                        class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                        class="select-dark"
                     >
                         <option value="all">All Sources</option>
                         {#each data.sources as src}
@@ -147,15 +135,11 @@
                     </select>
                 </div>
                 <div>
-                    <label
-                        for="sortBy"
-                        class="block text-sm font-medium text-gray-700 mb-1"
-                        >Sort By</label
-                    >
+                    <label for="sortBy" class="label-dark">Sort By</label>
                     <select
                         id="sortBy"
                         bind:value={sortBy}
-                        class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                        class="select-dark"
                     >
                         <option value="date">Date</option>
                         <option value="amount">Amount</option>
@@ -163,102 +147,72 @@
                     </select>
                 </div>
                 <div>
-                    <label
-                        for="sortOrder"
-                        class="block text-sm font-medium text-gray-700 mb-1"
-                        >Order</label
-                    >
+                    <label for="sortOrder" class="label-dark">Order</label>
                     <select
                         id="sortOrder"
                         bind:value={sortOrder}
-                        class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                        class="select-dark"
                     >
                         <option value="desc">Newest / Largest first</option>
                         <option value="asc">Oldest / Smallest first</option>
                     </select>
                 </div>
-                <button
-                    onclick={applyFilters}
-                    class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-md font-medium"
-                >
+                <button onclick={applyFilters} class="btn-primary">
                     Apply
                 </button>
             </div>
         </div>
 
         <!-- Table -->
-        <div
-            class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100"
-        >
+        <div class="glass-card overflow-hidden fade-in" style="animation-delay:.15s">
             {#if data.events.length === 0}
-                <div class="py-20 text-center text-gray-400">
-                    <p class="text-5xl mb-4">💰</p>
-                    <p class="text-lg font-medium">No funding events yet</p>
-                    <p class="text-sm mt-1">
-                        Click <strong>Fetch Funding</strong> to pull announcements
-                        from Google News, YC, and TechCrunch.
+                <div class="py-20 text-center">
+                    <p class="mb-3 text-5xl">💰</p>
+                    <p class="text-lg font-semibold text-slate-300">
+                        No funding events yet
+                    </p>
+                    <p class="mt-1 text-sm text-slate-500">
+                        Click <strong class="text-indigo-400">Fetch Funding</strong> to
+                        pull announcements from Google News, YC, and TechCrunch.
                     </p>
                 </div>
             {:else}
-                <table class="min-w-full divide-y divide-gray-100">
-                    <thead class="bg-gray-50">
+                <table class="table-dark">
+                    <thead>
                         <tr>
-                            <th
-                                class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                                >Company</th
-                            >
-                            <th
-                                class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                                >Amount Raised</th
-                            >
-                            <th
-                                class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                                >Source</th
-                            >
-                            <th
-                                class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                                >Date</th
-                            >
+                            <th>Company</th>
+                            <th>Amount Raised</th>
+                            <th>Source</th>
+                            <th>Date</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-50">
+                    <tbody>
                         {#each data.events as event}
-                            <tr class="hover:bg-gray-50 transition-colors">
-                                <td class="px-6 py-4">
-                                    <div
-                                        class="text-sm font-semibold text-gray-900"
-                                    >
+                            <tr>
+                                <td>
+                                    <div class="text-sm font-semibold text-slate-200">
                                         {event.company.name}
                                     </div>
                                     {#if event.company.domain}
-                                        <div class="text-xs text-gray-400">
+                                        <div class="text-xs text-slate-500">
                                             {event.company.domain}
                                         </div>
                                     {/if}
                                 </td>
-                                <td class="px-6 py-4">
-                                    <span
-                                        class="text-sm font-bold text-indigo-600"
-                                        >{formatAmount(event.amount)}</span
-                                    >
+                                <td>
+                                    <span class="text-sm font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
+                                        {formatAmount(event.amount)}
+                                    </span>
                                 </td>
-                                <td class="px-6 py-4">
-                                    <span
-                                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {sourceColor(
-                                            event.source,
-                                        )}"
-                                    >
+                                <td>
+                                    <span class="badge {sourceColor(event.source)}">
                                         {event.source}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-500">
+                                <td class="text-sm text-slate-500">
                                     {new Date(event.date).toLocaleDateString(
                                         "en-US",
-                                        {
-                                            year: "numeric",
-                                            month: "short",
-                                            day: "numeric",
-                                        },
+                                        { year: "numeric", month: "short", day: "numeric" },
                                     )}
                                 </td>
                             </tr>
@@ -266,35 +220,27 @@
                     </tbody>
                 </table>
 
-                <!-- Pagination info -->
+                <!-- Pagination -->
                 {#if data.totalCount > data.itemsPerPage}
-                    <div
-                        class="px-6 py-4 border-t border-gray-100 flex justify-between items-center text-sm text-gray-500"
-                    >
-                        <span
-                            >Showing {(data.currentPage - 1) *
-                                data.itemsPerPage +
-                                1}–{Math.min(
+                    <div class="flex items-center justify-between border-t border-white/[0.06] px-6 py-4 text-sm text-slate-500">
+                        <span>
+                            Showing {(data.currentPage - 1) * data.itemsPerPage + 1}–{Math.min(
                                 data.currentPage * data.itemsPerPage,
                                 data.totalCount,
-                            )} of {data.totalCount} events</span
-                        >
+                            )} of {data.totalCount} events
+                        </span>
                         <div class="flex gap-2">
                             {#if data.currentPage > 1}
                                 <a
-                                    href="/funding?page={data.currentPage -
-                                        1}&sortBy={sortBy}&sortOrder={sortOrder}&source={source}"
-                                    class="px-3 py-1 bg-gray-100 rounded hover:bg-gray-200"
-                                    >← Prev</a
-                                >
+                                    href="/funding?page={data.currentPage - 1}&sortBy={sortBy}&sortOrder={sortOrder}&source={source}"
+                                    class="btn-secondary text-xs"
+                                >← Prev</a>
                             {/if}
                             {#if data.currentPage * data.itemsPerPage < data.totalCount}
                                 <a
-                                    href="/funding?page={data.currentPage +
-                                        1}&sortBy={sortBy}&sortOrder={sortOrder}&source={source}"
-                                    class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200"
-                                    >Next →</a
-                                >
+                                    href="/funding?page={data.currentPage + 1}&sortBy={sortBy}&sortOrder={sortOrder}&source={source}"
+                                    class="btn-primary text-xs"
+                                >Next →</a>
                             {/if}
                         </div>
                     </div>

@@ -19,6 +19,14 @@
 	let sortOrder = $state($page.url.searchParams.get('sortOrder') || 'asc');
 	let platformFilter = $state($page.url.searchParams.get('platform') || 'all');
 
+	// Toast
+	let toast = $state<{ message: string; type: 'success' | 'error' } | null>(null);
+
+	function showToast(message: string, type: 'success' | 'error' = 'success') {
+		toast = { message, type };
+		setTimeout(() => (toast = null), 3000);
+	}
+
 	async function draftMessage(companyId: number) {
 		loading[companyId] = true;
 		try {
@@ -38,7 +46,7 @@
 
 	function copyToClipboard(text: string) {
 		navigator.clipboard.writeText(text);
-		alert('Copied to clipboard!');
+		showToast('Copied to clipboard!', 'success');
 	}
 
 	function handlePageChange(pageNum: number) {
@@ -74,18 +82,20 @@
 	}
 </script>
 
-<div class="min-h-screen bg-gray-50">
-	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-		<div class="mb-8">
-			<h1 class="text-3xl font-bold text-gray-900">Poor Performing Launches</h1>
-			<p class="text-gray-600 mt-1">Launches with less than 500 likes</p>
-			
-			<div class="mt-4">
-				<label class="block text-sm font-medium text-gray-700 mb-2">AI Provider</label>
-				<select
-					bind:value={selectedProvider}
-					class="border border-gray-300 rounded-md px-3 py-2"
-				>
+<div class="page-bg">
+	<div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+		<!-- Header -->
+		<div class="mb-8 fade-in">
+			<h1 class="text-3xl font-bold tracking-tight text-white text-glow">
+				Poor Performing Launches
+			</h1>
+			<p class="mt-1.5 text-sm text-slate-500">
+				Launches with less than 500 likes — opportunities for outreach
+			</p>
+
+			<div class="mt-4 flex items-center gap-3">
+				<label class="label-dark whitespace-nowrap">AI Provider</label>
+				<select bind:value={selectedProvider} class="select-dark w-auto">
 					<option value="openai">OpenAI</option>
 					<option value="grok">Grok</option>
 					<option value="gemini">Gemini</option>
@@ -94,150 +104,109 @@
 		</div>
 
 		<!-- Filters -->
-		<div class="bg-white shadow-md rounded-lg p-6 mb-6">
-			<h2 class="text-lg font-semibold text-gray-900 mb-4">Filters & Sorting</h2>
-			<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+		<div class="glass-card mb-6 p-5 fade-in" style="animation-delay:.05s">
+			<h2 class="label-dark mb-4 text-base">Filters & Sorting</h2>
+			<div class="grid grid-cols-1 gap-4 md:grid-cols-4">
 				<div>
-					<label for="search" class="block text-sm font-medium text-gray-700 mb-1">
-						Company Name
-					</label>
-					<input
-						id="search"
-						type="text"
-						bind:value={searchQuery}
-						placeholder="Search companies..."
-						class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-					/>
+					<label for="pp-search" class="label-dark">Company Name</label>
+					<input id="pp-search" type="text" bind:value={searchQuery} placeholder="Search companies..." class="input-dark" />
 				</div>
-
 				<div>
-					<label for="platform" class="block text-sm font-medium text-gray-700 mb-1">
-						Platform
-					</label>
-					<select
-						id="platform"
-						bind:value={platformFilter}
-						class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-					>
+					<label for="pp-platform" class="label-dark">Platform</label>
+					<select id="pp-platform" bind:value={platformFilter} class="select-dark">
 						<option value="all">All Platforms</option>
 						<option value="X">X (Twitter)</option>
 						<option value="LinkedIn">LinkedIn</option>
 					</select>
 				</div>
-
 				<div>
-					<label for="sortBy" class="block text-sm font-medium text-gray-700 mb-1">
-						Sort By
-					</label>
-					<select
-						id="sortBy"
-						bind:value={sortBy}
-						class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-					>
+					<label for="pp-sortBy" class="label-dark">Sort By</label>
+					<select id="pp-sortBy" bind:value={sortBy} class="select-dark">
 						<option value="likes">Likes</option>
 						<option value="timestamp">Date</option>
 						<option value="companyName">Company Name</option>
 					</select>
 				</div>
-
 				<div>
-					<label for="sortOrder" class="block text-sm font-medium text-gray-700 mb-1">
-						Sort Order
-					</label>
-					<select
-						id="sortOrder"
-						bind:value={sortOrder}
-						class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-					>
+					<label for="pp-sortOrder" class="label-dark">Sort Order</label>
+					<select id="pp-sortOrder" bind:value={sortOrder} class="select-dark">
 						<option value="asc">Ascending</option>
 						<option value="desc">Descending</option>
 					</select>
 				</div>
 			</div>
-
-			<div class="flex gap-2 mt-4">
-				<button
-					onclick={() => applyFilters()}
-					class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium"
-				>
-					Apply Filters
-				</button>
-				<button
-					onclick={resetFilters}
-					class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-md font-medium"
-				>
-					Reset
-				</button>
+			<div class="mt-4 flex gap-2">
+				<button onclick={() => applyFilters()} class="btn-primary flex-1">Apply</button>
+				<button onclick={resetFilters} class="btn-secondary flex-1">Reset</button>
 			</div>
 		</div>
 
-		<div class="space-y-6">
-			{#each data.poorPerformers as launch}
-				<div class="bg-white shadow-md rounded-lg p-6">
-					<div class="flex justify-between items-start mb-4">
-						<div>
+		<!-- Cards -->
+		<div class="space-y-4">
+			{#each data.poorPerformers as launch, i}
+				<div class="glass-card p-5 fade-in" style="animation-delay:{0.1 + i * 0.03}s">
+					<div class="flex items-start justify-between gap-4">
+						<div class="flex-1 min-w-0">
 							<div class="flex items-center gap-2">
-								<h3 class="text-xl font-semibold text-gray-900">{launch.company.name}</h3>
-								<button
-									onclick={() => openModal(launch.company)}
-									class="text-sm text-indigo-600 hover:text-indigo-800"
-								>
-									View Details
+								<h3 class="text-lg font-semibold text-white truncate">{launch.company.name}</h3>
+								<button onclick={() => openModal(launch.company)} class="link-accent text-xs shrink-0">
+									View
 								</button>
 							</div>
-							<p class="text-sm text-gray-500">
-								{launch.platform} • {launch.likes} likes • {new Date(launch.timestamp).toLocaleDateString()}
-							</p>
-							{#if launch.videoUrl}
-								<a href={launch.videoUrl} target="_blank" class="text-blue-600 hover:underline text-sm">
-									View Launch Post
-								</a>
-							{/if}
+							<div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+								<span class="inline-flex items-center gap-1 rounded-full bg-white/[0.06] px-2 py-0.5 text-slate-400">
+									{launch.platform === 'X' ? '𝕏' : '💼'} {launch.platform}
+								</span>
+								<span class="text-red-400/80 font-semibold">{launch.likes} likes</span>
+								<span>•</span>
+								<span>{new Date(launch.timestamp).toLocaleDateString()}</span>
+								{#if launch.videoUrl}
+									<a href={launch.videoUrl} target="_blank" class="link-accent">View Post ↗</a>
+								{/if}
+							</div>
 						</div>
 						<button
 							onclick={() => draftMessage(launch.company.id)}
 							disabled={loading[launch.company.id]}
-							class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium disabled:opacity-50"
+							class="btn-primary shrink-0 text-sm"
 						>
-							{loading[launch.company.id] ? 'Drafting...' : 'Draft DM'}
+							{loading[launch.company.id] ? 'Drafting…' : 'Draft DM'}
 						</button>
 					</div>
 
 					{#if draftedMessages[launch.company.id]}
-						<div class="mt-4 p-4 bg-gray-50 rounded-lg">
-							<div class="flex justify-between items-start mb-2">
-								<h4 class="font-medium text-gray-900">Drafted Message:</h4>
-								<button
-									onclick={() => copyToClipboard(draftedMessages[launch.company.id])}
-									class="text-sm text-blue-600 hover:text-blue-800"
-								>
+						<div class="mt-4 rounded-lg border border-indigo-500/20 bg-indigo-950/30 p-4">
+							<div class="mb-2 flex items-center justify-between">
+								<h4 class="text-sm font-semibold text-indigo-300">Drafted Message</h4>
+								<button onclick={() => copyToClipboard(draftedMessages[launch.company.id])} class="link-accent text-xs">
 									Copy
 								</button>
 							</div>
-							<p class="text-gray-700 whitespace-pre-wrap">{draftedMessages[launch.company.id]}</p>
+							<p class="whitespace-pre-wrap text-sm text-slate-300 leading-relaxed">{draftedMessages[launch.company.id]}</p>
 						</div>
 					{/if}
 
 					{#if launch.company.contacts.length > 0}
-						<div class="mt-4 pt-4 border-t border-gray-200">
-							<h4 class="font-medium text-gray-900 mb-2">Contact Information:</h4>
-							<div class="text-sm text-gray-600 space-y-1">
+						<div class="mt-4 border-t border-white/[0.06] pt-3">
+							<h4 class="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Contact</h4>
+							<div class="flex flex-wrap gap-3 text-xs text-slate-400">
 								{#if launch.company.contacts[0].email}
-									<div>📧 {launch.company.contacts[0].email}</div>
+									<span>📧 {launch.company.contacts[0].email}</span>
 								{/if}
 								{#if launch.company.contacts[0].linkedin}
-									<div>💼 <a href={launch.company.contacts[0].linkedin} target="_blank" class="text-blue-600 hover:underline">LinkedIn</a></div>
+									<a href={launch.company.contacts[0].linkedin} target="_blank" class="link-accent">💼 LinkedIn</a>
 								{/if}
 								{#if launch.company.contacts[0].xHandle}
-									<div>🐦 @{launch.company.contacts[0].xHandle}</div>
+									<span>🐦 @{launch.company.contacts[0].xHandle}</span>
 								{/if}
 							</div>
 						</div>
 					{/if}
 				</div>
 			{:else}
-				<div class="bg-white shadow-md rounded-lg p-6 text-center text-gray-500">
-					No poor performing launches found.
+				<div class="glass-card py-16 text-center">
+					<p class="mb-2 text-4xl">🎯</p>
+					<p class="text-sm text-slate-500">No poor performing launches found.</p>
 				</div>
 			{/each}
 		</div>
@@ -257,4 +226,24 @@
 
 {#if selectedCompany}
 	<CompanyModal company={selectedCompany} isOpen={isModalOpen} onclose={closeModal} />
+{/if}
+
+{#if toast}
+	<div
+		class="fixed bottom-6 right-6 z-50 flex items-start gap-3 rounded-xl px-5 py-4 shadow-2xl shadow-black/40 max-w-sm transition-all duration-300 border fade-in
+			{toast.type === 'success'
+			? 'bg-emerald-950/80 border-emerald-500/30 text-emerald-300'
+			: 'bg-red-950/80 border-red-500/30 text-red-300'}"
+		role="alert"
+	>
+		<span class="text-xl leading-none mt-0.5">
+			{toast.type === "success" ? "✅" : "⚠️"}
+		</span>
+		<p class="text-sm font-medium leading-snug flex-1">{toast.message}</p>
+		<button
+			onclick={() => (toast = null)}
+			class="ml-2 opacity-60 hover:opacity-100 text-lg leading-none shrink-0 transition-opacity"
+			aria-label="Dismiss">×</button
+		>
+	</div>
 {/if}

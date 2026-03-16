@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { prisma } from '$lib/db';
-import { searchFundingEvents } from '$lib/crunchbase';
+import { searchFundingEvents } from '$lib/funding-scraper';
 import { enrichContact } from '$lib/enrichment';
 import type { RequestHandler } from './$types';
 
