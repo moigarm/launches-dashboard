@@ -13,7 +13,15 @@ function createPrismaClient() {
 		throw new Error('DATABASE_URL environment variable is not set');
 	}
 
-	const pool = new pg.Pool({ connectionString });
+	// Decode base64 CA cert from env — no file path needed, works on any VM/container
+	const sslCa = env.DATABASE_SSL_CERT
+		? Buffer.from(env.DATABASE_SSL_CERT, 'base64').toString('utf-8')
+		: undefined;
+
+	const pool = new pg.Pool({
+		connectionString,
+		ssl: sslCa ? { ca: sslCa } : undefined,
+	});
 	const adapter = new PrismaPg(pool);
 	return new PrismaClient({ adapter });
 }
